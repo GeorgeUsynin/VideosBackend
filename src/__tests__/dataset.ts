@@ -1,7 +1,6 @@
 import type { TVideo, DBType } from '../db';
 import { Resolutions } from '../constants';
 
-// готовые данные для переиспользования в тестах
 const video1: TVideo = {
     id: 1,
     title: 'Learning TypeScript',

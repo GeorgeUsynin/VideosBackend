@@ -1,4 +1,4 @@
-import { request } from './tests-helpers';
+import { createErrorMessages, request } from './tests-helpers';
 import { setDB } from '../db';
 import { SETTINGS } from '../settings';
 import { dataset } from './dataset';
@@ -18,7 +18,7 @@ describe('/videos', () => {
         await request.get(SETTINGS.PATH.VIDEOS).expect(HTTP_STATUS_CODES.OK_200, [...dataset.videos]);
 
         // deleting all videos
-        await request.delete(SETTINGS.PATH.TESTING).expect(HTTP_STATUS_CODES.NO_CONTENT_204, []);
+        await request.delete(SETTINGS.PATH.TESTING).expect(HTTP_STATUS_CODES.NO_CONTENT_204);
     });
 
     it('gets all available videos', async () => {
@@ -48,14 +48,23 @@ describe('/videos', () => {
                 minAgeRestriction: null,
                 createdAt: expect.any(String),
                 publicationDate: expect.any(String),
-                availableResolutions: newVideo.availableResolutions,
+                availableResolutions: [Resolutions.P144],
             };
 
             //creating new video
-            await request.post(SETTINGS.PATH.VIDEOS).send(newVideo).expect(HTTP_STATUS_CODES.CREATED_201, createdVideo);
+            const { body: newVideoBodyResponse } = await request
+                .post(SETTINGS.PATH.VIDEOS)
+                .send(newVideo)
+                .expect(HTTP_STATUS_CODES.CREATED_201);
+
+            expect(newVideoBodyResponse).toEqual(createdVideo);
 
             //checking that the video was created
-            await request.get(SETTINGS.PATH.VIDEOS).expect(HTTP_STATUS_CODES.OK_200, [createdVideo]);
+            const { body: allVideosBodyResponse } = await request
+                .get(SETTINGS.PATH.VIDEOS)
+                .expect(HTTP_STATUS_CODES.OK_200);
+
+            expect(allVideosBodyResponse).toEqual([createdVideo]);
         });
 
         it('returns 404 status code and error object if payload for new video was incorrect', async () => {
@@ -63,60 +72,69 @@ describe('/videos', () => {
             //@ts-expect-error sending bad payload
             const newVideo1: CreateVideoInputModel = {
                 author: 'George Usynin',
+                availableResolutions: null,
             };
 
-            //creating new video
-            await request
+            const { body: errorBody1 } = await request
                 .post(SETTINGS.PATH.VIDEOS)
                 .send(newVideo1)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Title is required',
-                            field: 'title',
-                        },
-                    ],
-                });
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ title: true })).toEqual(errorBody1);
 
             //creating video without providing author
             //@ts-expect-error sending bad payload
             const newVideo2: CreateVideoInputModel = {
                 title: 'How to learn Node',
+                availableResolutions: null,
             };
 
-            //creating new video
-            await request
+            const { body: errorBody2 } = await request
                 .post(SETTINGS.PATH.VIDEOS)
                 .send(newVideo2)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Author is required',
-                            field: 'author',
-                        },
-                    ],
-                });
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ author: true })).toEqual(errorBody2);
+
+            //creating video providing bad availableResolutions
+            const newVideo3: CreateVideoInputModel = {
+                author: 'George Usynin',
+                title: 'How to learn Node',
+                availableResolutions: [],
+            };
+
+            const { body: errorBody3 } = await request
+                .post(SETTINGS.PATH.VIDEOS)
+                .send(newVideo3)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ availableResolutions: true })).toEqual(errorBody3);
+
+            //creating video providing bad availableResolutions
+            const newVideo4: CreateVideoInputModel = {
+                author: 'George Usynin',
+                title: 'How to learn Node',
+                //@ts-expect-error sending bad payload
+                availableResolutions: {},
+            };
+
+            const { body: errorBody4 } = await request
+                .post(SETTINGS.PATH.VIDEOS)
+                .send(newVideo4)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ availableResolutions: true })).toEqual(errorBody4);
 
             //creating video without providing required parameters
             //@ts-expect-error sending bad payload
-            const newVideo3: CreateVideoInputModel = {};
+            const newVideo5: CreateVideoInputModel = {};
 
-            //creating new video
-            await request
+            const { body: errorBody5 } = await request
                 .post(SETTINGS.PATH.VIDEOS)
-                .send(newVideo3)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Title is required',
-                            field: 'title',
-                        },
-                        {
-                            message: 'Author is required',
-                            field: 'author',
-                        },
-                    ],
-                });
+                .send(newVideo5)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ author: true, title: true })).toEqual(errorBody5);
         });
     });
 
@@ -189,7 +207,8 @@ describe('/videos', () => {
 
             //updating video by id
             //required author
-            const badUpdatedVideoPayload1 = {
+            //@ts-expect-error bad payload
+            const badUpdatedVideoPayload1: UpdateVideoInputModel = {
                 title: 'How to learn Node',
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
@@ -202,7 +221,7 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
                     errorsMessages: [
                         {
-                            message: 'Author is required',
+                            message: 'Author is required and should be a string',
                             field: 'author',
                         },
                     ],
@@ -210,7 +229,8 @@ describe('/videos', () => {
 
             //updating video by id
             //required title
-            const badUpdatedVideoPayload2 = {
+            //@ts-expect-error bad payload
+            const badUpdatedVideoPayload2: UpdateVideoInputModel = {
                 author: 'George Usynin',
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
@@ -223,15 +243,60 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
                     errorsMessages: [
                         {
-                            message: 'Title is required',
+                            message: 'Title is required and should be a string',
                             field: 'title',
                         },
                     ],
                 });
 
             //updating video by id
+            //required proper availableResolutions format
+            const badUpdatedVideoPayload3: UpdateVideoInputModel = {
+                title: 'How to learn Node',
+                author: 'George Usynin',
+                availableResolutions: [],
+                canBeDownloaded: true,
+                minAgeRestriction: 5,
+                publicationDate: new Date().toISOString(),
+            };
+            await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload3)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
+                    errorsMessages: [
+                        {
+                            message: 'Available resolutions should be null or an array with at least one resolution',
+                            field: 'availableResolutions',
+                        },
+                    ],
+                });
+
+            //updating video by id
+            //required proper availableResolutions format
+            const badUpdatedVideoPayload4: UpdateVideoInputModel = {
+                title: 'How to learn Node',
+                author: 'George Usynin',
+                //@ts-expect-error bad payload
+                availableResolutions: {},
+                canBeDownloaded: true,
+                minAgeRestriction: 5,
+                publicationDate: new Date().toISOString(),
+            };
+            await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload4)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
+                    errorsMessages: [
+                        {
+                            message: 'Available resolutions should be null or an array with at least one resolution',
+                            field: 'availableResolutions',
+                        },
+                    ],
+                });
+
+            //updating video by id
             //required proper minAgeRestriction
-            const badUpdatedVideoPayload3 = {
+            const badUpdatedVideoPayload5 = {
                 title: 'How to learn Node',
                 author: 'George Usynin',
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
@@ -241,7 +306,7 @@ describe('/videos', () => {
             };
             await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
-                .send(badUpdatedVideoPayload3)
+                .send(badUpdatedVideoPayload5)
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
                     errorsMessages: [
                         {
@@ -253,7 +318,7 @@ describe('/videos', () => {
 
             //updating video by id
             //required title and author, correct minAgeRestriction
-            const badUpdatedVideoPayload4 = {
+            const badUpdatedVideoPayload6 = {
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
                 minAgeRestriction: 30,
@@ -261,15 +326,15 @@ describe('/videos', () => {
             };
             await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
-                .send(badUpdatedVideoPayload4)
+                .send(badUpdatedVideoPayload6)
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
                     errorsMessages: [
                         {
-                            message: 'Author is required',
+                            message: 'Author is required and should be a string',
                             field: 'author',
                         },
                         {
-                            message: 'Title is required',
+                            message: 'Title is required and should be a string',
                             field: 'title',
                         },
                         {

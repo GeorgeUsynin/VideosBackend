@@ -9,7 +9,6 @@ type TError = {
 export type CreateUpdateVideoErrorViewModel = {
     /**
      * List of error messages encountered during video creation or update.
-     * Can be `null` if there are no errors.
      */
     errorsMessages: TError[] | null;
 };

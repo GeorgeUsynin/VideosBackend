@@ -16,7 +16,7 @@ export type CreateVideoInputModel = {
 
     /**
      * List of available resolutions for the newly created video.
-     * Can be `null`.
+     * Optional; can be `null` or omitted.
      */
-    availableResolutions: Resolutions[] | null;
+    availableResolutions?: Resolutions[] | null;
 };
