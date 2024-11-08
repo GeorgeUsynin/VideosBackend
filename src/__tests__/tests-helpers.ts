@@ -27,14 +27,14 @@ export const createErrorMessages = (values: TValues) => {
 
     if (author) {
         errorsMessages.push({
-            message: 'Author is required and should be a string',
+            message: 'Author is required and should be a string. Max length 20 characters',
             field: 'author',
         });
     }
 
     if (title) {
         errorsMessages.push({
-            message: 'Title is required and should be a string',
+            message: 'Title is required and should be a string. Max length 40 characters',
             field: 'title',
         });
     }

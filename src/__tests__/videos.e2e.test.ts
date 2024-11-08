@@ -68,6 +68,20 @@ describe('/videos', () => {
         });
 
         it('returns 404 status code and error object if payload for new video was incorrect', async () => {
+            //creating video with title length more than 40 characters
+            const newVideo: CreateVideoInputModel = {
+                title: 'How to learn backend and frontend with passion',
+                author: 'George Usynin',
+                availableResolutions: null,
+            };
+
+            const { body: errorBody } = await request
+                .post(SETTINGS.PATH.VIDEOS)
+                .send(newVideo)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ title: true })).toEqual(errorBody);
+
             //creating video without providing title
             //@ts-expect-error sending bad payload
             const newVideo1: CreateVideoInputModel = {
@@ -95,6 +109,20 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
 
             expect(createErrorMessages({ author: true })).toEqual(errorBody2);
+
+            //creating video with author length more than 20 characters
+            const newVideo2_1: CreateVideoInputModel = {
+                author: 'George Uysin and John Doe',
+                title: 'How to learn Node',
+                availableResolutions: null,
+            };
+
+            const { body: errorBody2_1 } = await request
+                .post(SETTINGS.PATH.VIDEOS)
+                .send(newVideo2_1)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ author: true })).toEqual(errorBody2_1);
 
             //creating video providing bad availableResolutions
             const newVideo3: CreateVideoInputModel = {
@@ -216,9 +244,9 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.OK_200);
 
             //updating video by id
-            //required author
-            //@ts-expect-error bad payload
+            //author should be more than 20 characters
             const badUpdatedVideoPayload1: UpdateVideoInputModel = {
+                author: 'George Uysin and John Doe',
                 title: 'How to learn Node',
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
@@ -233,9 +261,26 @@ describe('/videos', () => {
             expect(createErrorMessages({ author: true })).toEqual(body1);
 
             //updating video by id
-            //required title
+            //required author
             //@ts-expect-error bad payload
+            const badUpdatedVideoPayload1_2: UpdateVideoInputModel = {
+                title: 'How to learn Node',
+                availableResolutions: [Resolutions.P1440, Resolutions.P240],
+                canBeDownloaded: true,
+                minAgeRestriction: 5,
+                publicationDate: '2024-02-15T16:00:00Z',
+            };
+            const { body: body1_2 } = await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload1_2)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ author: true })).toEqual(body1_2);
+
+            //updating video by id
+            //title should be more than 40 characters
             const badUpdatedVideoPayload2: UpdateVideoInputModel = {
+                title: 'How to learn backend and frontend with passion',
                 author: 'George Usynin',
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
@@ -248,6 +293,23 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
 
             expect(createErrorMessages({ title: true })).toEqual(body2);
+
+            //updating video by id
+            //required title
+            //@ts-expect-error bad payload
+            const badUpdatedVideoPayload2_1: UpdateVideoInputModel = {
+                author: 'George Usynin',
+                availableResolutions: [Resolutions.P1440, Resolutions.P240],
+                canBeDownloaded: true,
+                minAgeRestriction: 5,
+                publicationDate: '2024-02-15T16:00:00Z',
+            };
+            const { body: body2_1 } = await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload2_1)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ title: true })).toEqual(body2_1);
 
             //updating video by id
             //required proper availableResolutions format

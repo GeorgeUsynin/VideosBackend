@@ -14,9 +14,9 @@ export const createInputValidation = (video: CreateVideoInputModel): CreateUpdat
         availableResolutions === null ||
         (Array.isArray(availableResolutions) && availableResolutions.length > 0);
 
-    const isValidTitle = typeof title === 'string' && Boolean(title.trim());
+    const isValidTitle = typeof title === 'string' && Boolean(title.trim()) && title.trim().length <= 40;
 
-    const isValidAuthor = typeof author === 'string' && Boolean(author.trim());
+    const isValidAuthor = typeof author === 'string' && Boolean(author.trim()) && author.trim().length <= 20;
 
     if (!isValidAvailableResolutions) {
         errorsMessages.push({
@@ -27,14 +27,14 @@ export const createInputValidation = (video: CreateVideoInputModel): CreateUpdat
 
     if (!isValidAuthor) {
         errorsMessages.push({
-            message: 'Author is required and should be a string',
+            message: 'Author is required and should be a string. Max length 20 characters',
             field: 'author',
         });
     }
 
     if (!isValidTitle) {
         errorsMessages.push({
-            message: 'Title is required and should be a string',
+            message: 'Title is required and should be a string. Max length 40 characters',
             field: 'title',
         });
     }
