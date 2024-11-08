@@ -145,9 +145,11 @@ describe('/videos', () => {
 
             const requestedId = 2;
             //requesting video by id
-            await request
+            const { body } = await request
                 .get(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
-                .expect(HTTP_STATUS_CODES.OK_200, dataset.videos[1]);
+                .expect(HTTP_STATUS_CODES.OK_200);
+
+            expect(body).toEqual(dataset.videos[1]);
         });
 
         it('returns 404 status code if there is no requested video in database', async () => {
@@ -164,7 +166,7 @@ describe('/videos', () => {
             availableResolutions: [Resolutions.P1440, Resolutions.P240],
             canBeDownloaded: true,
             minAgeRestriction: 5,
-            publicationDate: new Date().toISOString(),
+            publicationDate: '2024-02-15T16:00:00Z',
         };
 
         it('updates requested video', async () => {
@@ -179,11 +181,15 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.NO_CONTENT_204);
 
             //checking that requested video was updated correctly
-            await request.get(`${SETTINGS.PATH.VIDEOS}/${requestedId}`).expect(HTTP_STATUS_CODES.OK_200, {
+            const { body } = await request
+                .get(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .expect(HTTP_STATUS_CODES.OK_200);
+
+            expect({
                 ...updatedVideoPayload,
                 id: expect.any(Number),
                 createdAt: expect.any(String),
-            } as VideoViewModel);
+            }).toEqual(body);
         });
 
         it('returns 404 status code if there is no video with provided id in database', async () => {
@@ -204,6 +210,10 @@ describe('/videos', () => {
             setDB(dataset);
 
             const requestedId = 2;
+            //requesting video by id
+            const { body: updatedVideo } = await request
+                .get(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .expect(HTTP_STATUS_CODES.OK_200);
 
             //updating video by id
             //required author
@@ -213,19 +223,14 @@ describe('/videos', () => {
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
                 minAgeRestriction: 5,
-                publicationDate: new Date().toISOString(),
+                publicationDate: '2024-02-15T16:00:00Z',
             };
-            await request
+            const { body: body1 } = await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
                 .send(badUpdatedVideoPayload1)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Author is required and should be a string',
-                            field: 'author',
-                        },
-                    ],
-                });
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ author: true })).toEqual(body1);
 
             //updating video by id
             //required title
@@ -235,19 +240,14 @@ describe('/videos', () => {
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
                 minAgeRestriction: 5,
-                publicationDate: new Date().toISOString(),
+                publicationDate: '2024-02-15T16:00:00Z',
             };
-            await request
+            const { body: body2 } = await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
                 .send(badUpdatedVideoPayload2)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Title is required and should be a string',
-                            field: 'title',
-                        },
-                    ],
-                });
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ title: true })).toEqual(body2);
 
             //updating video by id
             //required proper availableResolutions format
@@ -257,19 +257,14 @@ describe('/videos', () => {
                 availableResolutions: [],
                 canBeDownloaded: true,
                 minAgeRestriction: 5,
-                publicationDate: new Date().toISOString(),
+                publicationDate: '2024-02-15T16:00:00Z',
             };
-            await request
+            const { body: body3 } = await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
                 .send(badUpdatedVideoPayload3)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Available resolutions should be null or an array with at least one resolution',
-                            field: 'availableResolutions',
-                        },
-                    ],
-                });
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ availableResolutions: true })).toEqual(body3);
 
             //updating video by id
             //required proper availableResolutions format
@@ -280,69 +275,92 @@ describe('/videos', () => {
                 availableResolutions: {},
                 canBeDownloaded: true,
                 minAgeRestriction: 5,
-                publicationDate: new Date().toISOString(),
+                publicationDate: '2024-02-15T16:00:00Z',
             };
-            await request
+            const { body: body4 } = await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
                 .send(badUpdatedVideoPayload4)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Available resolutions should be null or an array with at least one resolution',
-                            field: 'availableResolutions',
-                        },
-                    ],
-                });
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ availableResolutions: true })).toEqual(body4);
+
+            //updating video by id
+            //required proper canBeDownloaded type
+            const badUpdatedVideoPayload5: UpdateVideoInputModel = {
+                title: 'How to learn Node',
+                author: 'George Usynin',
+                availableResolutions: [Resolutions.P1080],
+                //@ts-expect-error bad payload
+                canBeDownloaded: null,
+                minAgeRestriction: 5,
+                publicationDate: '2024-02-15T16:00:00Z',
+            };
+            const { body: body5 } = await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload5)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ canBeDownloaded: true })).toEqual(body5);
 
             //updating video by id
             //required proper minAgeRestriction
-            const badUpdatedVideoPayload5 = {
+            const badUpdatedVideoPayload6: UpdateVideoInputModel = {
                 title: 'How to learn Node',
                 author: 'George Usynin',
                 availableResolutions: [Resolutions.P1440, Resolutions.P240],
                 canBeDownloaded: true,
                 minAgeRestriction: 30,
-                publicationDate: new Date().toISOString(),
+                publicationDate: '2024-02-15T16:00:00Z',
             };
-            await request
+            const { body: body6 } = await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
-                .send(badUpdatedVideoPayload5)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Incorrect age value. Age should be between 1 and 18',
-                            field: 'minAgeRestriction',
-                        },
-                    ],
-                });
+                .send(badUpdatedVideoPayload6)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ minAgeRestriction: true })).toEqual(body6);
+
+            //updating video by id
+            //required proper canBeDownloaded type
+            const badUpdatedVideoPayload7: UpdateVideoInputModel = {
+                title: 'How to learn Node',
+                author: 'George Usynin',
+                availableResolutions: [Resolutions.P1080],
+                canBeDownloaded: true,
+                minAgeRestriction: 5,
+                publicationDate: updatedVideo.createdAt,
+            };
+            const { body: body7 } = await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload7)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ publicationDate: true })).toEqual(body7);
 
             //updating video by id
             //required title and author, correct minAgeRestriction
-            const badUpdatedVideoPayload6 = {
-                availableResolutions: [Resolutions.P1440, Resolutions.P240],
-                canBeDownloaded: true,
+            const badUpdatedVideoPayload8: UpdateVideoInputModel = {
+                availableResolutions: [],
+                //@ts-expect-error bad payload
+                canBeDownloaded: null,
                 minAgeRestriction: 30,
-                publicationDate: new Date().toISOString(),
+                //@ts-expect-error bad payload
+                publicationDate: null,
             };
-            await request
+            const { body: body8 } = await request
                 .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
-                .send(badUpdatedVideoPayload6)
-                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400, {
-                    errorsMessages: [
-                        {
-                            message: 'Author is required and should be a string',
-                            field: 'author',
-                        },
-                        {
-                            message: 'Title is required and should be a string',
-                            field: 'title',
-                        },
-                        {
-                            message: 'Incorrect age value. Age should be between 1 and 18',
-                            field: 'minAgeRestriction',
-                        },
-                    ],
-                });
+                .send(badUpdatedVideoPayload8)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(
+                createErrorMessages({
+                    author: true,
+                    availableResolutions: true,
+                    canBeDownloaded: true,
+                    minAgeRestriction: true,
+                    publicationDate: true,
+                    title: true,
+                })
+            ).toEqual(body8);
         });
     });
 
@@ -358,8 +376,8 @@ describe('/videos', () => {
             //checking that the video was deleted
             await request.get(`${SETTINGS.PATH.VIDEOS}/${requestedId}`).expect(HTTP_STATUS_CODES.NOT_FOUND_404);
 
-            const videos = await request.get(SETTINGS.PATH.VIDEOS).expect(HTTP_STATUS_CODES.OK_200);
-            expect((videos as unknown as []).length).toBe(2);
+            const { body } = await request.get(SETTINGS.PATH.VIDEOS).expect(HTTP_STATUS_CODES.OK_200);
+            expect(body.length).toBe(2);
         });
 
         it('returns 404 status code if the video was not founded by requested ID', async () => {

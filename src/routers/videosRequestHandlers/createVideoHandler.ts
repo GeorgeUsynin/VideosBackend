@@ -4,10 +4,9 @@ import { HTTP_STATUS_CODES } from '../../constants';
 import type { RequestWithBody } from '../../types';
 import type { CreateVideoInputModel, VideoViewModel, CreateUpdateVideoErrorViewModel } from '../../models';
 
-const inputValidation = (video: CreateVideoInputModel): CreateUpdateVideoErrorViewModel => {
+export const createInputValidation = (video: CreateVideoInputModel): CreateUpdateVideoErrorViewModel => {
     const { author, title, availableResolutions } = video;
 
-    //why error if CreateUpdateVideoErrorViewModel also null?
     const errorsMessages: CreateUpdateVideoErrorViewModel['errorsMessages'] = [];
 
     const isValidAvailableResolutions =
@@ -16,6 +15,7 @@ const inputValidation = (video: CreateVideoInputModel): CreateUpdateVideoErrorVi
         (Array.isArray(availableResolutions) && availableResolutions.length > 0);
 
     const isValidTitle = typeof title === 'string' && Boolean(title.trim());
+
     const isValidAuthor = typeof author === 'string' && Boolean(author.trim());
 
     if (!isValidAvailableResolutions) {
@@ -63,9 +63,9 @@ export const createVideoHandler = (
     res: Response<VideoViewModel | CreateUpdateVideoErrorViewModel>
 ) => {
     const payload = req.body;
-    const errors = inputValidation(payload);
+    const errors = createInputValidation(payload);
 
-    if (Array.isArray(errors.errorsMessages)) {
+    if (errors.errorsMessages) {
         res.status(HTTP_STATUS_CODES.BAD_REQUEST_400).send(errors);
         return;
     }

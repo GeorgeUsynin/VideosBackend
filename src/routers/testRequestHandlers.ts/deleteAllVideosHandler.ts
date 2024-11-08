@@ -4,5 +4,5 @@ import { HTTP_STATUS_CODES } from '../../constants';
 
 export const deleteAllVideosHandler = (req: Request, res: Response) => {
     db.videos = [];
-    res.send(HTTP_STATUS_CODES.NO_CONTENT_204);
+    res.sendStatus(HTTP_STATUS_CODES.NO_CONTENT_204);
 };

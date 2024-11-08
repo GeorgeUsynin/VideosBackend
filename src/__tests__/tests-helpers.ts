@@ -8,12 +8,22 @@ type TValues = {
     title?: boolean;
     author?: boolean;
     availableResolutions?: boolean;
+    canBeDownloaded?: boolean;
+    minAgeRestriction?: boolean;
+    publicationDate?: boolean;
 };
 
 export const createErrorMessages = (values: TValues) => {
-    const { title, author, availableResolutions } = values;
+    const { title, author, availableResolutions, canBeDownloaded, minAgeRestriction, publicationDate } = values;
 
     const errorsMessages: CreateUpdateVideoErrorViewModel['errorsMessages'] = [];
+
+    if (availableResolutions) {
+        errorsMessages.push({
+            message: 'Available resolutions should be null or an array with at least one resolution',
+            field: 'availableResolutions',
+        });
+    }
 
     if (author) {
         errorsMessages.push({
@@ -29,10 +39,24 @@ export const createErrorMessages = (values: TValues) => {
         });
     }
 
-    if (availableResolutions) {
+    if (canBeDownloaded) {
         errorsMessages.push({
-            message: 'Available resolutions should be null or an array with at least one resolution',
-            field: 'availableResolutions',
+            message: 'CanBeDownloaded should be a boolean',
+            field: 'canBeDownloaded',
+        });
+    }
+
+    if (minAgeRestriction) {
+        errorsMessages.push({
+            message: 'Incorrect age value. Age should be between 1 and 18',
+            field: 'minAgeRestriction',
+        });
+    }
+
+    if (publicationDate) {
+        errorsMessages.push({
+            message: 'Publication date should be a string and should be more than created date plus one day',
+            field: 'publicationDate',
         });
     }
 
