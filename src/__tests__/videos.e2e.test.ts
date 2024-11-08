@@ -153,6 +153,21 @@ describe('/videos', () => {
 
             expect(createErrorMessages({ availableResolutions: true })).toEqual(errorBody4);
 
+            //creating video providing bad availableResolutions
+            const newVideo4_1: CreateVideoInputModel = {
+                author: 'George Usynin',
+                title: 'How to learn Node',
+                //@ts-expect-error sending bad payload
+                availableResolutions: [Resolutions.P1440, 'bad resolution'],
+            };
+
+            const { body: errorBody4_1 } = await request
+                .post(SETTINGS.PATH.VIDEOS)
+                .send(newVideo4_1)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ availableResolutions: true })).toEqual(errorBody4_1);
+
             //creating video without providing required parameters
             //@ts-expect-error sending bad payload
             const newVideo5: CreateVideoInputModel = {};
@@ -327,6 +342,24 @@ describe('/videos', () => {
                 .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
 
             expect(createErrorMessages({ availableResolutions: true })).toEqual(body3);
+
+            //updating video by id
+            //required proper availableResolutions format
+            const badUpdatedVideoPayload3_1: UpdateVideoInputModel = {
+                title: 'How to learn Node',
+                author: 'George Usynin',
+                //@ts-expect-error bad payload
+                availableResolutions: [Resolutions.P1440, 'bad resolution'],
+                canBeDownloaded: true,
+                minAgeRestriction: 5,
+                publicationDate: '2024-02-15T16:00:00Z',
+            };
+            const { body: body3_1 } = await request
+                .put(`${SETTINGS.PATH.VIDEOS}/${requestedId}`)
+                .send(badUpdatedVideoPayload3_1)
+                .expect(HTTP_STATUS_CODES.BAD_REQUEST_400);
+
+            expect(createErrorMessages({ availableResolutions: true })).toEqual(body3_1);
 
             //updating video by id
             //required proper availableResolutions format

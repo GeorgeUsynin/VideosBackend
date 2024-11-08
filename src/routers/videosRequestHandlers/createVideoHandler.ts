@@ -2,6 +2,7 @@ import { db } from '../../db';
 import { Response } from 'express';
 import { HTTP_STATUS_CODES } from '../../constants';
 import type { RequestWithBody } from '../../types';
+import { Resolutions } from '../../constants';
 import type { CreateVideoInputModel, VideoViewModel, CreateUpdateVideoErrorViewModel } from '../../models';
 
 export const createInputValidation = (video: CreateVideoInputModel): CreateUpdateVideoErrorViewModel => {
@@ -12,7 +13,9 @@ export const createInputValidation = (video: CreateVideoInputModel): CreateUpdat
     const isValidAvailableResolutions =
         availableResolutions === undefined ||
         availableResolutions === null ||
-        (Array.isArray(availableResolutions) && availableResolutions.length > 0);
+        (Array.isArray(availableResolutions) &&
+            availableResolutions.length > 0 &&
+            availableResolutions.every(resolution => Object.values(Resolutions).includes(resolution)));
 
     const isValidTitle = typeof title === 'string' && Boolean(title.trim()) && title.trim().length <= 40;
 
